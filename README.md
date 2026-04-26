@@ -8,6 +8,15 @@ Angry Birds clone game in JavaScript.
 
 https://lrusso.github.io/AngryBirds/AngryBirds.htm
 
+## Run locally
+
+```bash
+npm install
+npm start
+```
+
+Then open [http://localhost:8080](http://localhost:8080).
+
 ## Disclaimer
 
 The Angry Birds resources (images, fonts, music and sounds) are provided for educational purposes ONLY. This demo is not affiliated with or endorsed by their respective copyright holders.
