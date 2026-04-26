@@ -103,12 +103,16 @@ AngryBirds.Game.prototype = {
 		this.soundHandler = null;
 		this.turnInProgress = false;
 		this.currentLevel = null;
+		this.scoringZone = null;
+		this.scoreText = null;
+		this.zoneGraphic = null;
 		},
 
 	create: function()
 		{
 		// SETTING THE WORLD BOUNDS
-		game.world.setBounds(0, 0, game.width * 2, game.height);
+		// SETTING THE WORLD BOUNDS TO SCREEN WIDTH (100vw)
+		game.world.setBounds(0, 0, game.width, game.height);
 
 		// GETTING THE CURRENT LEVEL FOR LATER USE
 		this.currentLevel = GAME_LEVEL_SELECTED;
@@ -129,7 +133,7 @@ AngryBirds.Game.prototype = {
 		this.birdsCollisionGroup = this.game.physics.p2.createCollisionGroup();
 
 		// ADDING THE BACKGROUND
-		this.backgroundImage = this.add.tileSprite(0, 0, this.game.world.width * 2, this.game.world.height, "imageGameBackground");
+		this.backgroundImage = this.add.tileSprite(0, 0, this.game.world.width, this.game.world.height, "imageGameBackground");
 
 		// CREATING THE BIRDS GROUP
 		this.birds = this.add.group();
@@ -153,6 +157,14 @@ AngryBirds.Game.prototype = {
 		this.floor.body.setCollisionGroup(this.blocksCollisionGroup);
 		this.floor.body.collides([this.blocksCollisionGroup, this.enemiesCollisionGroup, this.birdsCollisionGroup]);
 		this.floor.body.static = true;
+
+		// ADDING THE RIGHT WALL (To feel like hitting a wall at the right edge)
+		var rightWall = this.game.add.sprite(this.game.world.width, this.game.world.height / 2);
+		this.game.physics.p2.enable(rightWall);
+		rightWall.body.setRectangle(20, this.game.world.height);
+		rightWall.body.static = true;
+		rightWall.body.setCollisionGroup(this.blocksCollisionGroup);
+		rightWall.body.collides([this.birdsCollisionGroup]);
 
 		// ADDING THE FLOOR GRASS BACK LAYER
 		this.floorGrassBack = this.add.tileSprite(-3, this.game.world.height - 65, this.game.world.width * 3, this.game.world.height - 418, "imageGameGrassBack");
@@ -220,6 +232,20 @@ AngryBirds.Game.prototype = {
 		this.soundHandler.fixedToCamera = true;
 		this.soundHandler.inputEnabled = true;
 		this.soundHandler.events.onInputUp.add(function(){this.toggleSound()},this);
+
+		// ADDING THE SCORING ZONE (Large and visible at the right edge)
+		this.scoringZone = new Phaser.Rectangle(580, 50, 180, 300);
+
+		// DRAWING THE SCORING ZONE
+		this.zoneGraphic = game.add.graphics(0, 0);
+		this.zoneGraphic.lineStyle(4, 0x00FF00, 1);
+		this.zoneGraphic.beginFill(0x00FF00, 0.3);
+		this.zoneGraphic.drawRect(this.scoringZone.x, this.scoringZone.y, this.scoringZone.width, this.scoringZone.height);
+		this.zoneGraphic.endFill();
+
+		// ADDING THE SCORE TEXT
+		this.scoreText = game.add.bitmapText(210, 15, "AngryBirdsFont", STRING_SCORE + ": 0", 28);
+		this.scoreText.fixedToCamera = true;
 
 		// ADDING THE BIRD LAUNCHER
 		this.birdLauncher = game.add.graphics(0, 0);
@@ -492,6 +518,29 @@ AngryBirds.Game.prototype = {
 			// CHECKING IF THE BIRD IS NOT MOVING ANYMORE OR IF IT'S OUT OF THE SCREEN
 			if ((Math.abs(this.bird.body.velocity.x) + Math.abs(this.bird.body.velocity.y) < 0.2 && this.bird.alpha==1) || (this.bird.position.x>game.world.width + 30 && this.bird.alpha==1))
 				{
+				// CALCULATING SCORE BASED ON PROXIMITY TO ZONE CENTER
+				var zoneCenter = new Phaser.Point(this.scoringZone.centerX, this.scoringZone.centerY);
+				var dist = Phaser.Point.distance(this.bird.position, zoneCenter);
+				var maxDist = 350; // Radius for scoring in 100vw world
+				
+				console.log("Bird stopped. Position:", this.bird.x, this.bird.y, "Zone Center:", zoneCenter.x, zoneCenter.y, "Distance:", dist);
+
+				if (dist < maxDist) {
+					var points = Math.floor(5000 * (1 - dist / maxDist));
+					this.scoreValue += points;
+					this.scoreText.text = STRING_SCORE + ": " + this.scoreValue;
+					console.log("Awarded points:", points, "Total Score:", this.scoreValue);
+
+					// ADDING FLOATING TEXT FOR FEEDBACK
+					var ptText = game.add.bitmapText(this.bird.x, this.bird.y - 50, "AngryBirdsFont", "+" + points, 32);
+					game.add.tween(ptText).to({y: ptText.y - 80, alpha: 0}, 1500, Phaser.Easing.Linear.None, true).onComplete.add(function(obj){ obj.destroy(); });
+					
+					// IF BIRD LANDS CLOSE TO CENTER, WIN THE LEVEL
+					if (dist < 100) {
+						this.updateDeadCount();
+					}
+				}
+
 				// FLAGGING THE BIRD
 				this.bird.alpha = 0.99;
 
@@ -599,13 +648,13 @@ AngryBirds.Game.prototype = {
 		// LOADING THE LEVEL DATA
 		this.levelData = JSON.parse(this.game.cache.getText("level" + GAME_LEVEL_SELECTED));
 
-		// LOADING AND CREATING ALL THE BLOCKS AND ENEMIES
+		// LOADING AND CREATING ALL THE BLOCKS (ENEMIES REMOVED)
 		this.levelData.blocks.forEach(function(block){this.createBlock(block)},this);
-		this.levelData.enemies.forEach(function(enemy){this.createEnemy(enemy)},this);
+		// this.levelData.enemies.forEach(function(enemy){this.createEnemy(enemy)},this);
 
 		// RESTORING THE DEFAULT LEVEL VALUES
 		this.countDeadEnemies = 0;
-		this.totalNumEnemies = this.levelData.enemies.length;
+		this.totalNumEnemies = 1; // Requirement: One zone hit to win
 		this.availableBirdsCounter = 3;
 		},
 
