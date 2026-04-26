@@ -16,6 +16,7 @@ var STRING_DISCLAIMER6 = "";
 var STRING_DISCLAIMER7 = "";
 var STRING_DISCLAIMER8_DESKTOP = "";
 var STRING_DISCLAIMER8_MOBILE = "";
+var STRING_SCORE = "";
 
 // CHECKING THE USER LANGUAGE
 if (userLanguage.substring(0,2)=="es")
@@ -33,6 +34,7 @@ if (userLanguage.substring(0,2)=="es")
 	STRING_DISCLAIMER7 = "titulares de derechos de autor.";
 	STRING_DISCLAIMER8_DESKTOP = "Haga click para continuar";
 	STRING_DISCLAIMER8_MOBILE = "Presione para continuar";
+	STRING_SCORE = "PUNTOS";
 	}
 	else
 	{
@@ -49,6 +51,7 @@ if (userLanguage.substring(0,2)=="es")
 	STRING_DISCLAIMER7 = "copyright holders.";
 	STRING_DISCLAIMER8_DESKTOP = "Click to continue";
 	STRING_DISCLAIMER8_MOBILE = "Tap to continue";
+	STRING_SCORE = "SCORE";
 	}
 
 var GAME_SOUND_ENABLED = true;
